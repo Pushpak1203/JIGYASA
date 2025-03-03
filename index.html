@@ -1,0 +1,250 @@
+<!DOCTYPE html> 
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat with Jigyasa</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Raleway|Ubuntu&display=swap");
+
+        body {
+            background: url('logo.webp') no-repeat center center fixed;
+            background-size: cover;
+            padding: 0;
+            margin: 0;
+            font-family: Raleway, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        /* Chatbox Entry Animation */
+        @keyframes zoomIn {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .chat-box {
+            width: 600px;
+            height: 80%;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0);
+            border-radius: 15px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: zoomIn 0.5s ease-in-out;
+        }
+
+        /* Chatbox Header with Robot Avatar */
+        .chat-box-header {
+            height: 60px;
+            display: flex;
+            align-items: center;
+            background: rgba(0, 123, 255, 0);
+            color: white;
+            font-family: Ubuntu, sans-serif;
+            font-size: 18px;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+            padding: 10px;
+        }
+
+        .chat-bot-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 15px;
+            background: rgba(255, 255, 255, 0.745);
+            padding: 5px;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .chat-box-body {
+            flex-grow: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* Message Fade-In Effect */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .chat-box-body-send, .chat-box-body-receive {
+            max-width: 80%;
+            padding: 10px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            opacity: 0;
+            animation: fadeIn 0.3s ease-in-out forwards;
+        }
+
+        .chat-box-body-send {
+            background: #f0f0f0;
+            align-self: flex-end;
+        }
+
+        .chat-box-body-receive {
+            background: #e6f7ff;
+            align-self: flex-start;
+            display: flex;
+            align-items: center;
+        }
+
+        /* Robot Avatar in Messages */
+        .bot-message {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bot-avatar {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: white;
+            padding: 3px;
+        }
+
+        .chat-box-footer {
+            padding: 10px;
+            display: flex;
+            align-items: center;
+            border-top: 1px solid #dddddd00;
+            background: #f9f9f900;
+        }
+
+        .chat-box-footer input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #cccccc00;
+            border-radius: 8px;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+
+        /* Send Button Hover Effect */
+        .send {
+            padding: 10px 20px;
+            background-color: #007bff00;
+            color: white;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            border-radius: 8px;
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .send:hover {
+            transform: scale(1.1);
+            background-color: #0056b3;
+        }
+
+        /* Typing Indicator Animation */
+        .typing-indicator {
+            display: inline-block;
+            width: 20px;
+            height: 5px;
+            border-radius: 50%;
+            background: #007bff;
+            box-shadow: 10px 0 0 #007bff, 20px 0 0 #007bff;
+            animation: typing 1s infinite ease-in-out;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="chat-box">
+        <!-- Chatbox Header with Robot Avatar -->
+        <div class="chat-box-header">
+            <img src="robot-avatar.png" alt="Bot Avatar" class="chat-bot-avatar"> 
+            <h3 id="chat-header">JIGYASA - Your AI Companion</h3>
+        </div>
+        
+        <div class="chat-box-body" id="chat-box"></div>
+        
+        <div class="chat-box-footer">
+            <input id="chat-input" placeholder="Enter Your Message" type="text" onkeydown="handleKeyDown(event)" />
+            <button class="send" id="send-button" onclick="sendMessage()"><i class="far fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const BOT_NAME = "JIGYASA";
+
+        document.addEventListener("DOMContentLoaded", function() {
+            appendMessage(BOT_NAME, "Hello! How can I assist you?", 'chat-box-body-receive', true); 
+        });
+
+        function sendMessage() {
+            const chatInput = document.getElementById('chat-input');
+            const message = chatInput.value.trim();
+            if (message === '') return;
+
+            appendMessage('You', message, 'chat-box-body-send');
+            chatInput.value = '';
+
+            fetch('http://localhost:5000/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message })
+            })
+            .then(response => response.json())
+            .then(data => {
+                appendMessage(BOT_NAME, data.response, 'chat-box-body-receive', true);
+            })
+            .catch(error => {
+                appendMessage(BOT_NAME, 'Error: ' + error.message, 'chat-box-body-receive', true);
+            });
+        }
+
+        function appendMessage(sender, message, className, isBot = false) {
+            const chatBox = document.getElementById('chat-box');
+            const messageElement = document.createElement('div');
+            messageElement.className = `message ${className}`;
+            
+            if (isBot) {
+                messageElement.innerHTML = `
+                    <div class="bot-message">
+                        <img src="robot-avatar.png" alt="Bot" class="bot-avatar">
+                        <div><strong>${sender}:</strong><br>${message}</div>
+                    </div>`;
+            } else {
+                messageElement.innerHTML = `<strong>${sender}:</strong><br>${message}`;
+            }
+
+            chatBox.appendChild(messageElement);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function handleKeyDown(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                sendMessage();
+            }
+        }
+    </script>
+</body>
+</html>
